@@ -1,0 +1,129 @@
+---
+title: "Weather Alerts Data with R"
+author: "Ian Cook"
+date: "March 12, 2016"
+output:
+  ioslides_presentation:
+    logo: Triangle-useR_Logo.png
+    widescreen: yes
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+options(width=65)
+```
+
+## Weather Alerts Data
+
+- The National Weather Service (NWS) syndicates information on current weather alerts at http://alerts.weather.gov/cap/us.php?x=1
+- No existing R package retrieves this current weather alert information
+- Alert information is not too useful by itself...
+
+## Alert Areas
+
+- The NWS defines the geographic areas under weather alerts using UGC codes: http://www.nws.noaa.gov/emwin/winugc.htm
+- Corresponding geographic polygons are defined in four different shapefiles that are large (118 MB), poorly documented, and difficult to work with: http://www.nws.noaa.gov/geodata/
+(states, counties, zones, fire zones)
+- In addition, many alert areas are defined via ad-hoc polygons: 
+http://www.srh.noaa.gov/images/bmx/aware/swaw_2010/web_version_pages_p6.pdf
+- Need to have the area polygons merged with the alerts information to do any mapping or spatial analysis of weather alerts
+
+## Solution
+
+- Two R packages:
+    - **weatherAlerts**: get weather alerts
+    - **weatherAlertAreas**: define alert areas (22 MB)
+- Both on GitHub
+    - https://github.com/ianmcook/weatherAlerts
+    - https://github.com/ianmcook/weatherAlertAreas
+```{r, eval=FALSE}
+devtools::install_github("ianmcook/weatherAlerts")
+devtools::install_github("ianmcook/weatherAlertAreas")
+```
+
+## Usage
+
+```{r, eval=FALSE}
+library(weatherAlerts)
+?getAlerts
+```
+
+- 50 states and DC
+```{r, eval=FALSE}
+alerts <- getAlerts()
+```
+
+- 48 states and DC
+```{r, eval=FALSE}
+alerts <- getAlerts(excludeStates = c("AK", "HI"))
+```
+
+- Specific state(s)
+```{r, eval=FALSE}
+alerts <- getAlerts(includeStates = "FL")
+```
+
+## Output
+
+- If package **weatherAlertAreas** is installed, returns a **SpatialPolygonsDataFrame** with the alert information and the alert area polygons
+- Otherwise returns a data frame containing the alert information 
+
+## Processing Output
+
+- Assign colors to alert severity levels
+
+```{r, eval=FALSE}
+severity <- factor(alerts@data$severity)
+severityLevels <- levels(severity)
+severityLevels[severityLevels == "Minor"] <- "green"
+severityLevels[severityLevels == "Moderate"] <- "yellow"
+severityLevels[severityLevels == "Severe"] <- "red"
+severityLevels[severityLevels == "Extreme"] <- "magenta"
+severityLevels[severityLevels == "Unknown"] <- "white"
+levels(severity) <- severityLevels
+severityColors <- as.character(severity)
+```
+
+## Mapping the Results
+
+- Using **maps** package
+
+```{r, eval=FALSE}
+library(maps)
+alertsMap <- SpatialPolygons2map(alerts)
+map("county", "ca")
+map(alertsMap, add=TRUE, fill=TRUE, col=severityColors)
+```
+
+- Using **leaflet** package
+
+```{r, eval=FALSE}
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data = alerts, color="black", fillColor=severityColors, weight=1)
+```
+
+## Finding Weather Alerts for a Specific Location
+
+```{r, eval=FALSE}
+mylocation <- SpatialPoints(
+  matrix(c(-122.4167, 37.7833), ncol = 2),
+  proj4string = CRS("+proj=longlat +datum=WGS84")
+)
+localAlerts <- over(mylocation, alerts, returnList = TRUE)[[1]]
+```
+
+- Please don't depend on this to save you from a tornado!
+
+## What's Next
+
+- Improve performance (currently really slow)
+- Do things the Hadley Wickham way (httr, rvest, underscores instead of camelCase!)
+- Submit to CRAN
+- Find international collaborators
+- Keep up to date with NWS alert area changes and API changes
+- Track new developments in R's handling of spatial data (https://github.com/edzer/sfr)
+
+
+
