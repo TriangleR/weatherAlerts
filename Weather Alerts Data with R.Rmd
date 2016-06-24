@@ -3,10 +3,10 @@ title: "Weather Alerts Data with R"
 author: "Ian Cook"
 date: "March 12, 2016"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     logo: Triangle-useR_Logo.png
     widescreen: yes
-  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -73,15 +73,11 @@ alerts <- getAlerts(includeStates = "FL")
 - Assign colors to alert severity levels
 
 ```{r, eval=FALSE}
-severity <- factor(alerts@data$severity)
-severityLevels <- levels(severity)
-severityLevels[severityLevels == "Minor"] <- "green"
-severityLevels[severityLevels == "Moderate"] <- "yellow"
-severityLevels[severityLevels == "Severe"] <- "red"
-severityLevels[severityLevels == "Extreme"] <- "magenta"
-severityLevels[severityLevels == "Unknown"] <- "white"
-levels(severity) <- severityLevels
-severityColors <- as.character(severity)
+severity <- alerts@data$severity
+colorMap <- c(Minor = "green", Moderate = "yellow", 
+              Severe = "red", Extreme = "magenta", 
+              Unknown = "white")
+severityColors <- unname(colorMap[severity])
 ```
 
 ## Mapping the Results
