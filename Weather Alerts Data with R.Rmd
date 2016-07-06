@@ -3,10 +3,10 @@ title: "Weather Alerts Data with R"
 author: "Ian Cook"
 date: "March 12, 2016"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     logo: Triangle-useR_Logo.png
     widescreen: yes
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -74,9 +74,12 @@ alerts <- getAlerts(includeStates = "FL")
 
 ```{r, eval=FALSE}
 severity <- alerts@data$severity
-colorMap <- c(Minor = "green", Moderate = "yellow", 
-              Severe = "red", Extreme = "magenta", 
-              Unknown = "white")
+colorMap <- c(
+  Minor = "green",
+  Moderate = "yellow", 
+  Severe = "red",
+  Extreme = "magenta", 
+  Unknown = "white")
 severityColors <- unname(colorMap[severity])
 ```
 
@@ -97,14 +100,18 @@ map(alertsMap, add=TRUE, fill=TRUE, col=severityColors)
 library(leaflet)
 leaflet() %>%
   addTiles() %>%
-  addPolygons(data = alerts, color="black", fillColor=severityColors, weight=1)
+  addPolygons(data = alerts, color="black",
+              fillColor=severityColors, weight=1)
 ```
 
 ## Finding Weather Alerts for a Specific Location
 
 ```{r, eval=FALSE}
+library(ggmap)
+mycoords <- geocode("San Francisco, CA")
+library(sp)
 mylocation <- SpatialPoints(
-  matrix(c(-122.4167, 37.7833), ncol = 2),
+  mycoords,
   proj4string = CRS("+proj=longlat +datum=WGS84")
 )
 localAlerts <- over(mylocation, alerts, returnList = TRUE)[[1]]
